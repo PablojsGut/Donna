@@ -1,13 +1,28 @@
-import React from "react";
-import RegistroPesaje from "./components/RegistroPesaje";
-
+import React, { useState } from "react";
+import Sidebar from "./components/Sidebar";
+import RegistroPesajePage from "./pages/RegistroPesajePage";
 function App() {
+  const [activePage, setActivePage] = useState("ingresarPesaje");
+
+  const renderPage = () => {
+    switch (activePage) {
+      case "ingresarPesaje":
+        return <RegistroPesajePage />;
+      case "verRegistros":
+        return <VerRegistrosPage />;
+      case "empleados":
+        return <EmpleadosPage />;
+      case "productos":
+        return <ProductosPage />;
+      default:
+        return <RegistroPesajePage />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
-        Registro de Pesaje de Productos
-      </h1>
-      <RegistroPesaje />
+    <div className="d-flex">
+      <div className="flex-grow-1">{renderPage()}</div>
+      <Sidebar active={activePage} onSelect={setActivePage} />
     </div>
   );
 }

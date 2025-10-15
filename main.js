@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { app, BrowserWindow, ipcMain } from "electron";
+import path from "path";
+import { fileURLToPath } from "url";
+import db from "./src/db/database.js"; // ✅ Conexión SQLite
+import { insertarEmpleado, listarEmpleados } from "./src/db/service.js"; // Ejemplo de funciones CRUD
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,33 +11,56 @@ let mainWindow;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 1100,
+    height: 800,
     webPreferences: {
-      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
+      nodeIntegration: false,
     },
   });
 
-  // En desarrollo: cargar Vite dev server
   if (!app.isPackaged) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL("http://localhost:5173");
   } else {
-    // En producción: cargar los archivos construidos
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, "dist", "index.html"));
   }
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
 };
 
-app.whenReady().then(createWindow);
+// ================== IPC COMUNICACIÓN ==================
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+// ✅ Empleados
+ipcMain.handle("empleado:listar", () => listarEmpleados());
+ipcMain.handle("empleado:insertar", (event, nombre) => insertarEmpleado(nombre));
+
+// ✅ Limpieza automática
+ipcMain.handle("db:limpiar-antiguos", () => {
+  db.prepare(`
+    DELETE FROM bolsa WHERE id_pesaje IN (
+      SELECT id_pesaje FROM pesaje
+      WHERE DATE(fecha_pesaje) <= DATE('now', '-30 days')
+    )
+  `).run();
+
+  db.prepare(`
+    DELETE FROM pesaje
+    WHERE DATE(fecha_pesaje) <= DATE('now', '-30 days')
+  `).run();
 });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+app.whenReady().then(() => {
+  // Ejecutar limpieza al iniciar la app
+  db.prepare(`
+    DELETE FROM bolsa WHERE id_pesaje IN (
+      SELECT id_pesaje FROM pesaje
+      WHERE DATE(fecha_pesaje) <= DATE('now', '-30 days')
+    )
+  `).run();
+
+  db.prepare(`
+    DELETE FROM pesaje
+    WHERE DATE(fecha_pesaje) <= DATE('now', '-30 days')
+  `).run();
+
+  createWindow();
 });
