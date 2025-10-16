@@ -1,18 +1,52 @@
 import React, { useState, useEffect } from "react";
+import EmpleadoForm from "../components/empleados/EmpleadoForm";
+import EmpleadosTable from "../components/empleados/EmpleadosTable";
+import ActionButtons from "../components/ActionButtons";
 
 function EmpleadosPage() {
   const [empleados, setEmpleados] = useState([]);
   const [nuevoEmpleado, setNuevoEmpleado] = useState("");
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
+  const [editandoId, setEditandoId] = useState(null);
+  const [nombreEditado, setNombreEditado] = useState("");
 
   const cargarEmpleados = async () => {
     const data = await window.api.listarEmpleados();
-    setEmpleados(data);
+    const disponibles = data.filter((emp) => emp.estado === "Disponible");
+    setEmpleados(disponibles);
   };
 
   const agregarEmpleado = async () => {
     if (!nuevoEmpleado.trim()) return;
     await window.api.insertarEmpleado(nuevoEmpleado);
     setNuevoEmpleado("");
+    cargarEmpleados();
+  };
+
+  const iniciarEdicion = () => {
+    if (!empleadoSeleccionado)
+      return alert("Selecciona un empleado para editar");
+    setEditandoId(empleadoSeleccionado.id);
+    setNombreEditado(empleadoSeleccionado.nombre);
+  };
+
+  const guardarCambios = async () => {
+    if (!nombreEditado.trim() || !editandoId) return;
+    await window.api.actualizarEmpleado(editandoId, nombreEditado, "Disponible");
+    setEditandoId(null);
+    setEmpleadoSeleccionado(null);
+    setNombreEditado("");
+    cargarEmpleados();
+  };
+
+  const eliminarEmpleado = async () => {
+    if (!empleadoSeleccionado)
+      return alert("Selecciona un empleado para eliminar");
+    const confirmacion = confirm("¿Seguro que deseas eliminar este empleado?");
+    if (!confirmacion) return;
+
+    await window.api.eliminarEmpleado(empleadoSeleccionado.id);
+    setEmpleadoSeleccionado(null);
     cargarEmpleados();
   };
 
@@ -26,37 +60,26 @@ function EmpleadosPage() {
         <div className="card-body">
           <h3 className="text-primary mb-3">Gestión de Empleados</h3>
 
-          <div className="input-group mb-3">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Nombre del empleado"
-              value={nuevoEmpleado}
-              onChange={(e) => setNuevoEmpleado(e.target.value)}
-            />
-            <button className="btn btn-success" onClick={agregarEmpleado}>
-              Agregar
-            </button>
-          </div>
+          <EmpleadoForm
+            nuevoEmpleado={nuevoEmpleado}
+            setNuevoEmpleado={setNuevoEmpleado}
+            onAgregar={agregarEmpleado}
+          />
 
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {empleados.map((emp) => (
-                <tr key={emp.id}>
-                  <td>{emp.id}</td>
-                  <td>{emp.nombre}</td>
-                  <td>{emp.estado}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ActionButtons
+            onSave={guardarCambios}
+            onEdit={iniciarEdicion}
+            onDelete={eliminarEmpleado}
+            isEditing={!!editandoId}
+          />
+
+          <EmpleadosTable
+            empleados={empleados}
+            editandoId={editandoId}
+            nombreEditado={nombreEditado}
+            setNombreEditado={setNombreEditado}
+            onSelect={setEmpleadoSeleccionado}
+          />
         </div>
       </div>
     </div>

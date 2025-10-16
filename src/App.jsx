@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import RegistroPesajePage from "./pages/RegistroPesajePage";
+import EmpleadosPage from "./pages/EmpleadosPage";
+
 function App() {
   const [activePage, setActivePage] = useState("ingresarPesaje");
 

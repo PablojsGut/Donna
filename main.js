@@ -2,7 +2,16 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from "./src/db/database.js"; // ✅ Conexión SQLite
-import { insertarEmpleado, listarEmpleados } from "./src/db/service.js"; // Ejemplo de funciones CRUD
+import {
+  listarEmpleados,
+  insertarEmpleado,
+  listarProductos,
+  insertarProducto,
+  listarPesajes,
+  insertarPesaje,
+  listarBolsas,
+  insertarBolsa,
+} from "./src/db/service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +23,11 @@ const createWindow = () => {
     width: 1100,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(
+        app.isPackaged
+          ? path.join(process.resourcesPath, "preload.js") // ✅ producción
+          : path.join(__dirname, "preload.js") // ✅ desarrollo
+      ),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -29,9 +42,20 @@ const createWindow = () => {
 
 // ================== IPC COMUNICACIÓN ==================
 
-// ✅ Empleados
+// Empleados
 ipcMain.handle("empleado:listar", () => listarEmpleados());
 ipcMain.handle("empleado:insertar", (event, nombre) => insertarEmpleado(nombre));
+ipcMain.handle("empleado:actualizar", (event, id, nombre, estado) => actualizarEmpleado(id, nombre, estado));
+ipcMain.handle("empleado:eliminar", (event, id) => eliminarEmpleado(id));
+
+ipcMain.handle("producto:listar", () => listarProductos());
+ipcMain.handle("producto:insertar", (event, nombre, peso) => insertarProducto(nombre, peso));
+
+ipcMain.handle("pesaje:listar", () => listarPesajes());
+ipcMain.handle("pesaje:insertar", (event, data) => insertarPesaje(data));
+
+ipcMain.handle("bolsa:listar", () => listarBolsas());
+ipcMain.handle("bolsa:insertar", (event, data) => insertarBolsa(data));
 
 // ✅ Limpieza automática
 ipcMain.handle("db:limpiar-antiguos", () => {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import RegistroForm from "../components/RegistroForm";
-import RegistrosTable from "../components/RegistrosTable";
+import RegistroForm from "../components/pesaje/RegistroForm";
+import RegistrosTable from "../components/pesaje/RegistrosTable";
 
 function RegistroPesajePage() {
   const [registros, setRegistros] = useState([]);
